@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Express 14 for Windows Desktop
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "objview", "objview\objview.shproj", "{7D5E6FC9-F7A1-4E92-A473-07D5683D1622}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "objview.WinForms", "objview.WinForms\objview.WinForms.csproj", "{63018316-34A7-4F61-82B0-31371ADE3B09}"
+EndProject
+Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		objview\objview.projitems*{63018316-34a7-4f61-82b0-31371ade3b09}*SharedItemsImports = 4
+		objview\objview.projitems*{7d5e6fc9-f7a1-4e92-a473-07d5683d1622}*SharedItemsImports = 13
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{63018316-34A7-4F61-82B0-31371ADE3B09}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63018316-34A7-4F61-82B0-31371ADE3B09}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{63018316-34A7-4F61-82B0-31371ADE3B09}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63018316-34A7-4F61-82B0-31371ADE3B09}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
