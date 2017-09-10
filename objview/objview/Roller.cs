@@ -19,11 +19,11 @@ namespace objview
         private const float INERTIAL_ROTATION_DECAY = 0.25f;
         private const int RESET_PERIOD = 1000; // in milliseconds
 
-        // Variables to control decaying inertial rotation after the user's action
-        // (scrolling).
-        private float mInertialRotationSpeed = 0.0f;
-        private float mInertialRotationAxisX = 0.0f;
-        private float mInertialRotationAxisY = 0.0f;
+        //// Variables to control decaying inertial rotation after the user's action
+        //// (scrolling).
+        //private float mInertialRotationSpeed = 0.0f;
+        //private float mInertialRotationAxisX = 0.0f;
+        //private float mInertialRotationAxisY = 0.0f;
 
         // Variables to control reset animation
         private int mResetMillis = 0;
@@ -43,7 +43,7 @@ namespace objview
         /// </summary>
         public void Pin()
         {
-            mInertialRotationSpeed = 0.0f;
+            //mInertialRotationSpeed = 0.0f;
             mResetMillis = 0;
             mPinnedRotation = mRotation;
         }
@@ -64,18 +64,18 @@ namespace objview
             mRotationChanged = true;
         }
 
-        /// <summary>
-        /// Start an inertial rotation to follow a velocity vector (x, y).
-        /// The rotation continues for a while then stops.
-        /// </summary>
-        /// <param name="x"></param>
-        /// <param name="y"></param>
-        public void RotateInertially(float x, float y)
-        {
-            mInertialRotationSpeed = (float)Math.Sqrt(x * x + y * y) * ROTATION_SCALE;
-            mInertialRotationAxisX = -y;
-            mInertialRotationAxisY = x;
-        }
+        ///// <summary>
+        ///// Start an inertial rotation to follow a velocity vector (x, y).
+        ///// The rotation continues for a while then stops.
+        ///// </summary>
+        ///// <param name="x"></param>
+        ///// <param name="y"></param>
+        //public void RotateInertially(float x, float y)
+        //{
+        //    mInertialRotationSpeed = (float)Math.Sqrt(x * x + y * y) * ROTATION_SCALE;
+        //    mInertialRotationAxisX = -y;
+        //    mInertialRotationAxisY = x;
+        //}
 
         /// <summary>
         /// Start an automatic reset rotation.
@@ -93,7 +93,7 @@ namespace objview
         public void Reset()
         {
             mRotation = Quaternion.Identity;
-            mInertialRotationSpeed = 0.0f;
+            //mInertialRotationSpeed = 0.0f;
             mResetMillis = 0;
             mRotationChanged = true;
         }
@@ -106,7 +106,8 @@ namespace objview
         /// The UI thread should keep calling <see cref="Update(int)"/> on every frame
         /// as long as <see cref="IsAnimating"/> is true.
         /// </remarks>
-        public bool IsAnimating { get { return mInertialRotationSpeed >= 1.0f || mResetMillis > 0; } }
+        public bool IsAnimating { get { return mResetMillis > 0; } }
+        //public bool IsAnimating { get { return mInertialRotationSpeed >= 1.0f || mResetMillis > 0; } }
 
         /// <summary>
         /// Updates animations.
@@ -118,14 +119,14 @@ namespace objview
         public void Update(int millis)
         {
 
-            // Take care of inertial rotation.
-            if (mInertialRotationSpeed >= 1.0f)
-            {
-                mRotation = new Quaternion(new Vertex3f(mInertialRotationAxisX, mInertialRotationAxisY, 0.0f), mInertialRotationSpeed * millis) * mRotation;
-                mRotation.Normalize();
-                mInertialRotationSpeed *= (float)Math.Pow(INERTIAL_ROTATION_DECAY, millis / 1000.0f);
-                mRotationChanged = true;
-            }
+            //// Take care of inertial rotation.
+            //if (mInertialRotationSpeed >= 1.0f)
+            //{
+            //    mRotation = new Quaternion(new Vertex3f(mInertialRotationAxisX, mInertialRotationAxisY, 0.0f), mInertialRotationSpeed * millis) * mRotation;
+            //    mRotation.Normalize();
+            //    mInertialRotationSpeed *= (float)Math.Pow(INERTIAL_ROTATION_DECAY, millis / 1000.0f);
+            //    mRotationChanged = true;
+            //}
 
             // Take care of reset animation.
             if (mResetMillis > 0)
