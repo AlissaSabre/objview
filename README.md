@@ -1,3 +1,4 @@
+
 # objview
 A sample C# program to read and render a Wavefront obj file using OpenGL
 
@@ -12,3 +13,8 @@ It should run on more recent OpenGL with the Compatibility Profile, though I'm n
 
 If you are more familiar with C# than C++ and are trying to learn OpenGL, this program may be useful as a sample program.
 Otherwise, it would have nothing to do with you.
+
+For the [moment](https://github.com/AlissaSabre/objview/tree/19e0220f699d20f2f5dace71c5ec2bf2a4989b83):
+* It runs on Windows with .NET Framework 4.5.
+* It can read some obj files and show it on the window using vertex coordinates and normals in the file.  It uses program's own default material (texture/material information in obj is just ignored.)
+* You can rotate the model using mouse.
