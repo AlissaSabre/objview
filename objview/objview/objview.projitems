@@ -14,6 +14,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)ObjMesh.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GlMain.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)OvershootInterpolator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)QuaternionWorkaround.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Roller.cs" />
   </ItemGroup>
 </Project>

@@ -73,10 +73,7 @@ namespace objview
         {
             if (Mesh == null) return;
 
-            var now = DateTime.UtcNow;
-            var ellapsed = (now - LastDraw).Milliseconds;
-            LastDraw = now;
-            Roller.Update(ellapsed);
+            Roller.Update();
 
             if (MeshIsDirty)
             {

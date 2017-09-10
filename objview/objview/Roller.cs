@@ -26,7 +26,7 @@ namespace objview
         //private float mInertialRotationAxisY = 0.0f;
 
         // Variables to control reset animation
-        private int mResetMillis = 0;
+        private DateTime mResetOn = DateTime.MinValue;
         private Quaternion mResetFrom;
         private OvershootInterpolator mResetInterporator = new OvershootInterpolator(0.8f);
 
@@ -44,7 +44,7 @@ namespace objview
         public void Pin()
         {
             //mInertialRotationSpeed = 0.0f;
-            mResetMillis = 0;
+            mResetOn = DateTime.MinValue;
             mPinnedRotation = mRotation;
         }
 
@@ -59,8 +59,9 @@ namespace objview
         public void Rotate(float x, float y)
         {
             var angle = (float)Math.Sqrt(x * x + y * y) * ROTATION_SCALE;
-            mRotation = new Quaternion(new Vertex3f(-y, x, 0.0f), angle) * mPinnedRotation;
+            mRotation = new Quaternion(new Vertex3f(-y, x, 0.0f), angle).Multiply(mPinnedRotation);
             mRotation.Normalize();
+            Canonicalize(mRotation);
             mRotationChanged = true;
         }
 
@@ -84,7 +85,7 @@ namespace objview
         public void StartReset()
         {
             mResetFrom = mRotation;
-            mResetMillis = RESET_PERIOD;
+            mResetOn = DateTime.UtcNow;
         }
 
         /// <summary>
@@ -94,7 +95,7 @@ namespace objview
         {
             mRotation = Quaternion.Identity;
             //mInertialRotationSpeed = 0.0f;
-            mResetMillis = 0;
+            mResetOn = DateTime.MinValue;
             mRotationChanged = true;
         }
 
@@ -106,7 +107,7 @@ namespace objview
         /// The UI thread should keep calling <see cref="Update(int)"/> on every frame
         /// as long as <see cref="IsAnimating"/> is true.
         /// </remarks>
-        public bool IsAnimating { get { return mResetMillis > 0; } }
+        public bool IsAnimating { get { return mResetOn > DateTime.MinValue; } }
         //public bool IsAnimating { get { return mInertialRotationSpeed >= 1.0f || mResetMillis > 0; } }
 
         /// <summary>
@@ -116,7 +117,7 @@ namespace objview
         /// The UI thread should keep calling this method at some reasonable interval as long as <see cref="IsAnimating"/> is true.
         /// The UI thread may call this method when <see cref="IsAnimating"/> is false, though it is not necessary.
         /// </remarks>
-        public void Update(int millis)
+        public void Update()
         {
 
             //// Take care of inertial rotation.
@@ -129,20 +130,21 @@ namespace objview
             //}
 
             // Take care of reset animation.
-            if (mResetMillis > 0)
+            if (mResetOn > DateTime.MinValue)
             {
-                if (mResetMillis <= millis)
+                var ellapsed = (float)(DateTime.UtcNow - mResetOn).TotalMilliseconds;
+                if (ellapsed >= RESET_PERIOD)
                 {
                     mRotation = Quaternion.Identity;
-                    mResetMillis = 0;
+                    mResetOn = DateTime.MinValue;
                 }
                 else
                 {
-                    var s = (RESET_PERIOD - mResetMillis) / (float)RESET_PERIOD;
+                    var s = ellapsed / RESET_PERIOD;
                     var t = mResetInterporator.getInterpolation(s);
                     mRotation = Lerp(mResetFrom, Quaternion.Identity, t);
                     mRotation.Normalize();
-                    mResetMillis -= millis;
+                    Canonicalize(mRotation);
                 }
                 mRotationChanged = true;
             }
@@ -185,6 +187,20 @@ namespace objview
                 a.Y * s + b.Y * t,
                 a.Z * s + b.Z * t,
                 a.W * s + b.W * t);
+        }
+
+        private static void Canonicalize(Quaternion q)
+        {
+            if (q.W < 0f ||
+                (q.W == 0f && (q.X < 0f ||
+                (q.X == 0f && (q.Y < 0f ||
+                (q.Y == 0f && (q.Z < 0f)))))))
+            {
+                q.X = -q.X;
+                q.Y = -q.Y;
+                q.Z = -q.Z;
+                q.W = -q.W;
+            }
         }
     }
 }
