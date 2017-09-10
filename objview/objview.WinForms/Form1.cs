@@ -37,21 +37,45 @@ namespace objview.WinForms
         private void glControl1_Render(object sender, OpenGL.GlControlEventArgs e)
         {
             GlMain.Draw();
+            if (glControl1.Animation != GlMain.Animating)
+            {
+                glControl1.Animation = GlMain.Animating;
+            }
         }
+
+        private bool Rotating = false;
 
         private void glControl1_MouseDown(object sender, MouseEventArgs e)
         {
-
+            if (e.Button.HasFlag(MouseButtons.Left))
+            {
+                GlMain.StartRotating(e.X, glControl1.Height - e.Y);
+                Rotating = true;
+            }
         }
 
         private void glControl1_MouseMove(object sender, MouseEventArgs e)
         {
-
+            if (e.Button.HasFlag(MouseButtons.Left) && Rotating)
+            {
+                GlMain.Rotating(e.X, glControl1.Height - e.Y);
+                glControl1.Invalidate();
+            }
         }
 
         private void glControl1_MouseUp(object sender, MouseEventArgs e)
         {
+            if (e.Button.HasFlag(MouseButtons.Left))
+            {
+                GlMain.EndRotating(e.X, glControl1.Height - e.Y);
+                Rotating = false;
+            }
+        }
 
+        private void glControl1_DoubleClick(object sender, EventArgs e)
+        {
+            GlMain.ResetRotation();
+            glControl1.Invalidate();
         }
 
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
@@ -68,6 +92,5 @@ namespace objview.WinForms
         {
             Close();
         }
-
     }
 }

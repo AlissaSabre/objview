@@ -23,6 +23,8 @@ namespace objview
             }
         }
 
+        public static bool Animating { get { return Roller.IsAnimating; } }
+
         private static uint VertexBufferName;
 
         private static uint IndexBufferName;
@@ -33,13 +35,13 @@ namespace objview
 
         private static bool ViewportIsDirty;
 
+        private static float ViewportCanonicalScale;
+
+        private static float CameraDistance;
+
         private static Vertex3f MeshCenter;
 
         private static float MeshRadious;
-
-        //private static float MeshFitScale;
-
-        private static Vertex3f MeshPosition;
 
         public static void Initialize()
         {
@@ -65,9 +67,16 @@ namespace objview
 
         private const float CAMERA_DISTANCE_RATIO = 4.0f;
 
+        private static DateTime LastDraw = DateTime.UtcNow;
+
         public static void Draw()
         {
             if (Mesh == null) return;
+
+            var now = DateTime.UtcNow;
+            var ellapsed = (now - LastDraw).Milliseconds;
+            LastDraw = now;
+            Roller.Update(ellapsed);
 
             if (MeshIsDirty)
             {
@@ -78,6 +87,9 @@ namespace objview
 
                 EstimateBoundingSphare(Mesh.Vertices, out MeshCenter, out MeshRadious);
                 ViewportIsDirty = true;
+
+                Roller.Reset();
+
                 MeshIsDirty = false;
             }
 
@@ -85,16 +97,16 @@ namespace objview
             {
                 Gl.Viewport(0, 0, ViewportWidth, ViewportHeight);
 
-                var distance = CAMERA_DISTANCE_RATIO * MeshRadious;
-                MeshPosition = new Vertex3f(-MeshCenter.x, -MeshCenter.y, -MeshCenter.z - distance);
+                CameraDistance = CAMERA_DISTANCE_RATIO * MeshRadious;
 
-                var scale = (double)MeshRadious / Math.Min(ViewportWidth, ViewportHeight);
+                ViewportCanonicalScale = 2f / Math.Min(ViewportWidth, ViewportHeight);
+                var s = (double)MeshRadious * ViewportCanonicalScale / 2;
 
                 Gl.MatrixMode(MatrixMode.Projection);
                 Gl.LoadIdentity();
-                Gl.Frustum(-ViewportWidth * scale, ViewportWidth * scale, -ViewportHeight * scale, ViewportHeight * scale, distance - MeshRadious, distance + MeshRadious);
-                //Gl.Ortho(-ViewportWidth * scale, ViewportWidth * scale, -ViewportHeight * scale, ViewportHeight * scale, distance - MeshRadious, distance + MeshRadious);
-
+                Gl.Frustum(-ViewportWidth * s, ViewportWidth * s, -ViewportHeight * s, ViewportHeight * s, CameraDistance - MeshRadious, CameraDistance + MeshRadious);
+                //Gl.Ortho(-ViewportWidth * s, ViewportWidth * s, -ViewportHeight * s, ViewportHeight * s, distance - MeshRadious, distance + MeshRadious);
+                Gl.Translate(0f, 0f, -CameraDistance);
             }
 
             Gl.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -102,7 +114,6 @@ namespace objview
 
             Gl.MatrixMode(MatrixMode.Modelview);
             Gl.LoadIdentity();
-            Gl.Translate(MeshPosition.x, MeshPosition.y, MeshPosition.z);
 
             Gl.Disable(EnableCap.Normalize);
 
@@ -124,6 +135,9 @@ namespace objview
             Gl.Light(LightName.Light0, LightParameter.Specular, new[] { 0.5f, 0.5f, 0.5f, 1.0f });
             Gl.Light(LightName.Light0, LightParameter.Diffuse, new[] { 1.0f, 1.0f, 1.0f, 1.0f });
             Gl.Light(LightName.Light0, LightParameter.Position, new[] { 0.3f, 0.5f, 1.0f, 0.0f });
+
+            Gl.MultMatrix(Roller.getMatrix().ToArray());
+            Gl.Translate(-MeshCenter.x, -MeshCenter.y, -MeshCenter.z);
 
             Gl.EnableClientState(EnableCap.VertexArray);
             Gl.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferName);
@@ -159,5 +173,30 @@ namespace objview
             radious = (float)Math.Sqrt(r9);
         }
 
+        private static readonly Roller Roller = new Roller();
+
+        private static int LastRotateX, LastRotateY;
+
+        public static void StartRotating(int x, int y)
+        {
+            LastRotateX = x;
+            LastRotateY = y;
+            Roller.Pin();
+        }
+
+        public static void Rotating(int x, int y)
+        {
+            Roller.Rotate((x - LastRotateX) * ViewportCanonicalScale, (y - LastRotateY) * ViewportCanonicalScale);
+        }
+
+        public static void EndRotating(int x, int y)
+        {
+            // Do nothing special.
+        }
+
+        public static void ResetRotation()
+        {
+            Roller.StartReset();
+        }
     }
 }
