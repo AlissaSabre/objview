@@ -11,11 +11,40 @@ using OpenGL;
 
 namespace objview
 {
-    public class ObjMesh : IMesh
+    public class ObjMesh
     {
-        public MeshVertex[] Vertices { get; protected set; }
+        #region public methods
 
-        public int[] Faces { get; protected set; }
+        public static IMesh FromFile(string filename)
+        {
+            using (var stream = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                return FromStream(stream);
+            }
+        }
+
+        public static IMesh FromStream(Stream stream)
+        {
+            using (var reader = new StreamReader(stream, Encoding.ASCII, false, 4096, true))
+            {
+                return FromTextReader(reader);
+            }
+        }
+
+        public static IMesh FromTextReader(TextReader reader)
+        {
+            var instance = new ObjMesh();
+            instance.Read(reader);
+            return instance.Build();
+        }
+
+        #endregion
+
+        protected ObjMesh()
+        {
+        }
+
+        #region Reading raw obj data
 
         protected class VertexInfo
         {
@@ -24,101 +53,13 @@ namespace objview
             public int Vn;
         }
 
-        protected class RawData
-        {
-            public List<Vertex3f> V = new List<Vertex3f>();
-            public List<Vertex2f> Vt = new List<Vertex2f>();
-            public List<Vertex3f> Vn = new List<Vertex3f>();
-            public List<VertexInfo[]> F = new List<VertexInfo[]>();
-        }
+        protected List<Vertex3f> ObjV = new List<Vertex3f>();
 
-        public static ObjMesh FromFile(string filename)
-        {
-            using (var stream = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
-            {
-                return FromStream(stream);
-            }
-        }
+        protected List<Vertex2f> ObjVt = new List<Vertex2f>();
 
-        public static ObjMesh FromStream(Stream stream)
-        {
-            using (var reader = new StreamReader(stream, Encoding.ASCII, false, 4096, true))
-            {
-                return FromTextReader(reader);
-            }
-        }
+        protected List<Vertex3f> ObjVn = new List<Vertex3f>();
 
-        public static ObjMesh FromTextReader(TextReader reader)
-        {
-            var obj = new RawData();
-            for (;;)
-            {
-                var line = reader.ReadLine();
-                if (line == null) break;
-                if (line.Length < 1) continue;
-                if (line[0] == '#') continue;
-
-                switch (GetObjKey(line))
-                {
-                    case Key.V:
-                        obj.V.Add(GetVertex3f(line));
-                        break;
-                    case Key.VT:
-                        obj.Vt.Add(GetVertex2f(line));
-                        break;
-                    case Key.VN:
-                        obj.Vn.Add(GetVertex3f(line));
-                        break;
-                    case Key.F:
-                        obj.F.Add(GetVertexInfoList(line, obj));
-                        break;
-                    case Key.G:
-                    case Key.MTLLIB:
-                    case Key.USEMTL:
-                    case Key.S:
-                    case Key.O:
-                    case Key.P:
-                    case Key.L:
-                        break;
-                }
-            }
-
-            var vertices = new List<MeshVertex>(obj.V.Count * 2);
-            var faces = new List<int>(obj.F.Count * 4);
-            foreach (var f in obj.F)
-            {
-                var p = Index(f[0], obj, vertices);
-                var q = Index(f[1], obj, vertices);
-                for (int i = 2; i < f.Length; i++)
-                {
-                    faces.Add(p);
-                    faces.Add(q);
-                    faces.Add(q = Index(f[i], obj, vertices));
-                }
-            }
-
-            return new ObjMesh() { Vertices = vertices.ToArray(), Faces = faces.ToArray() };
-        }
-
-        protected static int Index(VertexInfo info, RawData data, List<MeshVertex> vertices)
-        {
-            var v = new MeshVertex();
-            v.Coord = info.V <= 0 ? Vertex3f.Zero : data.V[info.V - 1];
-            v.Normal = info.Vn <= 0 ? Vertex3f.Zero : data.Vn[info.Vn - 1];
-            v.TexCoord = info.Vt <= 0 ? Vertex2f.Zero : data.Vt[info.Vt - 1];
-#if true
-            var i = vertices.Count;
-            vertices.Add(v);
-#else
-            var i = vertices.IndexOf(v);
-            if (i < 0)
-            {
-                i = vertices.Count;
-                vertices.Add(v);
-            }
-#endif
-            return i;
-        }
+        protected List<VertexInfo[]> ObjF = new List<VertexInfo[]>();
 
         protected enum Key
         {
@@ -135,9 +76,43 @@ namespace objview
             L,
         }
 
-        // protected static Key[] Keys = Enum.GetValues(typeof(Key)) as Key[];
+        protected static string[] Keywords
+            = Enum.GetNames(typeof(Key)).Select(name => name.ToLowerInvariant()).ToArray();
 
-        protected static string[] Keywords = (Enum.GetValues(typeof(Key)) as Key[]).Select(k => k.ToString().ToLowerInvariant()).ToArray();
+        protected void Read(TextReader reader)
+        {
+            for (;;)
+            {
+                var line = reader.ReadLine();
+                if (line == null) break;
+                if (line.Length < 1) continue;
+                if (line[0] == '#') continue;
+
+                switch (GetObjKey(line))
+                {
+                    case Key.V:
+                        ObjV.Add(GetVertex3f(line));
+                        break;
+                    case Key.VT:
+                        ObjVt.Add(GetVertex2f(line));
+                        break;
+                    case Key.VN:
+                        ObjVn.Add(GetVertex3f(line));
+                        break;
+                    case Key.F:
+                        ObjF.Add(GetVertexInfoList(line));
+                        break;
+                    case Key.G:
+                    case Key.MTLLIB:
+                    case Key.USEMTL:
+                    case Key.S:
+                    case Key.O:
+                    case Key.P:
+                    case Key.L:
+                        break;
+                }
+            }
+        }
 
         protected static Key GetObjKey(string line)
         {
@@ -173,21 +148,21 @@ namespace objview
                 float.Parse(items[3], CultureInfo.InvariantCulture));
         }
 
-        protected static VertexInfo[] GetVertexInfoList(string line, RawData data)
+        protected VertexInfo[] GetVertexInfoList(string line)
         {
             var items = line.Split(DELIMITERS, StringSplitOptions.RemoveEmptyEntries);
             if (items.Length < 4) throw new Exception(string.Format("invalid obj line: {0}", line));
             var a = new VertexInfo[items.Length - 1];
             for (int i = 1; i < items.Length; i++)
             {
-                a[i - 1] = ParseVertexInfo(items[i], data);
+                a[i - 1] = ParseVertexInfo(items[i]);
             }
             return a;
         }
 
         protected static char[] SLANT = { '/' };
 
-        protected static VertexInfo ParseVertexInfo(string info, RawData data)
+        protected VertexInfo ParseVertexInfo(string info)
         {
             var items = info.Split(SLANT, 4, StringSplitOptions.None);
             switch (items.Length)
@@ -195,20 +170,20 @@ namespace objview
                 case 1:
                     return new VertexInfo()
                     {
-                        V = GetIndex(items[0], data.V.Count)
+                        V = GetIndex(items[0], ObjV.Count)
                     };
                 case 2:
                     return new VertexInfo()
                     {
-                        V = GetIndex(items[0], data.V.Count),
-                        Vt = GetIndex(items[1], data.Vt.Count)
+                        V = GetIndex(items[0], ObjV.Count),
+                        Vt = GetIndex(items[1], ObjVt.Count)
                     };
                 case 3:
                     return new VertexInfo()
                     {
-                        V = GetIndex(items[0], data.V.Count),
-                        Vt = GetIndex(items[1], data.Vt.Count),
-                        Vn = GetIndex(items[2], data.Vn.Count)
+                        V = GetIndex(items[0], ObjV.Count),
+                        Vt = GetIndex(items[1], ObjVt.Count),
+                        Vn = GetIndex(items[2], ObjVn.Count)
                     };
                 default:
                     throw new Exception();
@@ -224,5 +199,107 @@ namespace objview
             if (n > 0) return n;
             throw new Exception();
         }
+
+        #endregion
+
+        #region IMesh building
+
+        protected List<MeshVertex> Vertices;
+
+        protected List<int> Faces;
+
+        protected HashSet<EdgeInfo> Edges;
+
+        protected IMesh Build()
+        {
+            Vertices = new List<MeshVertex>(ObjV.Count * 4);
+            Faces = new List<int>(ObjF.Count * 3);
+            Edges = new HashSet<EdgeInfo>();
+
+            foreach (var f in ObjF)
+            {
+                var p = AddMeshVertex(f[0]);
+                var q = AddMeshVertex(f[1]);
+                AddMeshEdge(p, q);
+                for (int i = 2; i < f.Length; i++)
+                {
+                    var r = AddMeshVertex(f[i]);
+                    AddMeshTriangle(p, q, r);
+                    AddMeshEdge(q, r);
+                    q = r;
+                }
+                AddMeshEdge(q, p);
+            }
+
+            return new MeshContainer(Vertices.ToArray(), Faces.ToArray(), GetEdgesArray());
+        }
+
+        protected int AddMeshVertex(VertexInfo info)
+        {
+            var v = new MeshVertex();
+            v.Coord = info.V <= 0 ? Vertex3f.Zero : ObjV[info.V - 1];
+            v.Normal = info.Vn <= 0 ? Vertex3f.Zero : ObjVn[info.Vn - 1];
+            v.TexCoord = info.Vt <= 0 ? Vertex2f.Zero : ObjVt[info.Vt - 1];
+
+            var i = Vertices.Count;
+            Vertices.Add(v);
+            return i;
+        }
+
+        protected void AddMeshTriangle(int i, int j, int k)
+        {
+            Faces.Add(i);
+            Faces.Add(j);
+            Faces.Add(k);
+        }
+
+        protected void AddMeshEdge(int i, int j)
+        {
+            Edges.Add(new EdgeInfo(Vertices[i].Coord, Vertices[j].Coord, i, j));
+        }
+
+        protected int[] GetEdgesArray()
+        {
+            var array = new int[Edges.Count * 2];
+            int i = 0;
+            foreach (var e in Edges)
+            {
+                array[i++] = e.IA;
+                array[i++] = e.IB;
+            }
+            return array;
+        }
+
+        protected class EdgeInfo
+        {
+            private readonly Vertex3f A, B;
+
+            public readonly int IA, IB;
+
+            private readonly int HashCode;
+
+            public EdgeInfo(Vertex3f a, Vertex3f b, int ia, int ib)
+            {
+                A = a;
+                B = b;
+                IA = ia;
+                IB = ib;
+                HashCode = a.GetHashCode() + b.GetHashCode();
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (obj == null || !(obj is EdgeInfo)) return false;
+                var e = obj as EdgeInfo;
+                return (A == e.A && B == e.B) || (A == e.B && B == e.A);
+            }
+
+            public override int GetHashCode()
+            {
+                return HashCode;
+            }
+        }
+
+        #endregion
     }
 }

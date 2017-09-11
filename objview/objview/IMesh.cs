@@ -10,5 +10,6 @@ namespace objview
     {
         MeshVertex[] Vertices { get; }
         int[] Faces { get; }
+        int[] Wires { get; }
     }
 }

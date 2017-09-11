@@ -29,6 +29,8 @@ namespace objview
 
         private static uint IndexBufferName;
 
+        private static uint WireIndexBufferName;
+
         private static int ViewportWidth;
 
         private static int ViewportHeight;
@@ -45,17 +47,19 @@ namespace objview
 
         public static void Initialize()
         {
-            var names = new uint[2];
+            var names = new uint[3];
             Gl.GenBuffers(names);
             VertexBufferName = names[0];
             IndexBufferName = names[1];
+            WireIndexBufferName = names[2];
         }
 
         public static void Destroy()
         {
-            Gl.DeleteBuffers(VertexBufferName, IndexBufferName);
+            Gl.DeleteBuffers(VertexBufferName, IndexBufferName, WireIndexBufferName);
             VertexBufferName = 0;
             IndexBufferName = 0;
+            WireIndexBufferName = 0;
         }
 
         public static void Resize(int width, int height)
@@ -81,6 +85,8 @@ namespace objview
                 Gl.BufferData(BufferTarget.ArrayBuffer, (uint)(Mesh.Vertices.Length * MeshVertex.Size), Mesh.Vertices, BufferUsage.StaticDraw);
                 Gl.BindBuffer(BufferTarget.ElementArrayBuffer, IndexBufferName);
                 Gl.BufferData(BufferTarget.ElementArrayBuffer, (uint)(Mesh.Faces.Length * sizeof(int)), Mesh.Faces, BufferUsage.StaticDraw);
+                Gl.BindBuffer(BufferTarget.ElementArrayBuffer, WireIndexBufferName);
+                Gl.BufferData(BufferTarget.ElementArrayBuffer, (uint)(Mesh.Wires.Length * sizeof(int)), Mesh.Wires, BufferUsage.StaticDraw);
 
                 EstimateBoundingSphare(Mesh.Vertices, out MeshCenter, out MeshRadious);
                 ViewportIsDirty = true;
@@ -136,14 +142,24 @@ namespace objview
             Gl.MultMatrix(Roller.getMatrix().ToArray());
             Gl.Translate(-MeshCenter.x, -MeshCenter.y, -MeshCenter.z);
 
-            Gl.EnableClientState(EnableCap.VertexArray);
             Gl.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferName);
+            Gl.EnableClientState(EnableCap.VertexArray);
             Gl.VertexPointer(3, VertexPointerType.Float, MeshVertex.Size, (IntPtr)MeshVertex.CoordOffset);
+            Gl.EnableClientState(EnableCap.NormalArray);
             Gl.NormalPointer(NormalPointerType.Float, MeshVertex.Size, (IntPtr)MeshVertex.NormalOffset);
 
-            Gl.EnableClientState(EnableCap.NormalArray);
+            Gl.Enable(EnableCap.PolygonOffsetFill);
+            Gl.PolygonOffset(1f, 1f);
             Gl.BindBuffer(BufferTarget.ElementArrayBuffer, IndexBufferName);
             Gl.DrawElements(PrimitiveType.Triangles, Mesh.Faces.Length, DrawElementsType.UnsignedInt, IntPtr.Zero);
+            Gl.Disable(EnableCap.PolygonOffsetFill);
+
+            Gl.Disable(EnableCap.Lighting);
+            Gl.Color3(0f, 0.5f, 0f);
+            Gl.DisableClientState(EnableCap.NormalArray);
+            Gl.BindBuffer(BufferTarget.ElementArrayBuffer, WireIndexBufferName);
+            Gl.DrawElements(PrimitiveType.Lines, Mesh.Wires.Length, DrawElementsType.UnsignedInt, IntPtr.Zero);
+
         }
 
         private static void EstimateBoundingSphare(MeshVertex[] vertices, out Vertex3f center, out float radious)
