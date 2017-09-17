@@ -10,10 +10,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Edge.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)IMesh.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)MeshContainer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MeshModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MeshVertex.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ObjMesh.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ObjModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GlMain.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)OvershootInterpolator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)QuaternionWorkaround.cs" />

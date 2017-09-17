@@ -11,11 +11,11 @@ using OpenGL;
 
 namespace objview
 {
-    public class ObjMesh
+    public class ObjModel
     {
         #region public methods
 
-        public static IMesh FromFile(string filename)
+        public static IModel FromFile(string filename)
         {
             using (var stream = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
@@ -23,7 +23,7 @@ namespace objview
             }
         }
 
-        public static IMesh FromStream(Stream stream)
+        public static IModel FromStream(Stream stream)
         {
             using (var reader = new StreamReader(stream, Encoding.ASCII, false, 4096, true))
             {
@@ -31,16 +31,16 @@ namespace objview
             }
         }
 
-        public static IMesh FromTextReader(TextReader reader)
+        public static IModel FromTextReader(TextReader reader)
         {
-            var instance = new ObjMesh();
+            var instance = new ObjModel();
             instance.Read(reader);
             return instance.Build();
         }
 
         #endregion
 
-        protected ObjMesh()
+        protected ObjModel()
         {
         }
 
@@ -210,7 +210,7 @@ namespace objview
 
         protected HashSet<EdgeInfo> Edges;
 
-        protected IMesh Build()
+        protected IModel Build()
         {
             Vertices = new List<MeshVertex>(ObjV.Count * 4);
             Faces = new List<int>(ObjF.Count * 3);
@@ -231,7 +231,7 @@ namespace objview
                 AddMeshEdge(q, p);
             }
 
-            return new MeshContainer(Vertices.ToArray(), Faces.ToArray(), GetEdgesArray());
+            return new MeshModel(Vertices.ToArray(), Faces.ToArray(), GetEdgesArray());
         }
 
         protected int AddMeshVertex(VertexInfo info)

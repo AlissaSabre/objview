@@ -82,8 +82,8 @@ namespace objview.WinForms
         {
             if (DialogResult.OK == openFileDialog1.ShowDialog())
             {
-                var mesh = ObjMesh.FromFile(openFileDialog1.FileName);
-                GlMain.Mesh = mesh;
+                var model = ObjModel.FromFile(openFileDialog1.FileName);
+                GlMain.Model = model;
                 glControl1.Invalidate();
             }
         }
