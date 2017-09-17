@@ -9,7 +9,6 @@
     <Import_RootNamespace>objview</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)Edge.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MeshModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MeshVertex.cs" />
